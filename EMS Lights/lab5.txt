@@ -1,0 +1,140 @@
+from pynq import Overlay
+from pynq import GPIO
+from time import sleep
+from ipywidgets import interact
+import ipywidgets as widgets
+
+# overlay
+ps_gpio_design = Overlay("ps_gpio_kv260.bit")
+
+# GPIO objects
+ems_led1 = GPIO(GPIO.get_gpio_pin(0), 'out')
+ems_led2 = GPIO(GPIO.get_gpio_pin(4), 'out')
+turn_led1 = GPIO(GPIO.get_gpio_pin(1), 'out')
+turn_led2 = GPIO(GPIO.get_gpio_pin(2), 'out')
+turn_led3 = GPIO(GPIO.get_gpio_pin(3), 'out')
+slider = GPIO(GPIO.get_gpio_pin(5), 'in')
+buzzer = GPIO(GPIO.get_gpio_pin(6), 'out')
+
+buzzer.write(0)
+ems_led1.write(0)
+ems_led2.write(0)
+turn_led3.write(0)
+turn_led2.write(0)
+turn_led1.write(0)
+
+DELAY = 0.5
+
+right_state = 0
+left_state = 1
+brake_state = 2
+emer_state = 3
+
+
+# handles the main logic
+def main():
+    
+    for i in range(0,3):
+        if i == right_state:
+            right_turn()
+            
+        elif i == left_state:
+            left_turn()
+            
+        elif i == brake_state:
+            brake_light()
+        
+        elif i == emer_state:
+            emer_lights()  
+        
+    #turns the buzzer and leds off after the code is run
+    buzzer.write(0)
+    ems_led1.write(0)
+    ems_led2.write(0)
+    turn_led3.write(0)
+    turn_led2.write(0)
+    turn_led1.write(0)    
+
+def play_sound(frequency, duration=100):
+    period = 1/frequency
+    timeHigh = period/2
+    for _ in range(0, int(duration)): #, int(timeHigh*1000)):
+        buzzer.write(1)
+        sleep(timeHigh)
+        buzzer.write(0)
+        sleep(timeHigh)
+
+# Right turn        
+def right_turn():    
+    for i in range(3):
+        turn_led1.write(1)
+        sleep(DELAY)
+        turn_led2.write(1)
+        sleep(DELAY)
+        turn_led3.write(1)
+        sleep(DELAY)
+        turn_led3.write(0)
+        turn_led2.write(0)
+        turn_led1.write(0)
+
+# Left turn
+def left_turn():
+    for i in range(3):
+        turn_led3.write(1)
+        sleep(DELAY)
+        turn_led2.write(1)
+        sleep(DELAY)
+        turn_led1.write(1)
+        sleep(DELAY)
+        turn_led3.write(0)
+        turn_led2.write(0)
+        turn_led1.write(0)
+
+#Brake light    
+def brake_light():
+    for i in range(1):
+        #Brake Light
+        for i in range(3):
+            turn_led1.write(1)
+            turn_led2.write(1)
+            turn_led3.write(1)
+        sleep(1)
+        turn_led1.write(0)
+        turn_led2.write(0)
+        turn_led3.write(0)
+        sleep(1)
+
+# Emergency Lights
+def emer_lights():
+    ems_led1.write(1)
+    ems_led1.write(0)
+    ems_led2.write(1)
+    ems_led2.write(0)
+
+    for i in range(5):
+        slider_value = slider.read()
+        if (slider_value == 0):
+            buzzer.write(0)
+            for i in range(3):
+                ems_led1.write(1)
+                sleep(DELAY)
+                ems_led2.write(1)
+                ems_led1.write(0)
+                sleep(DELAY)
+                ems_led2.write(0)
+        if (slider_value > 0):
+            buzzer.write(1)
+            for i in range(3):
+                ems_led1.write(1)
+                sleep(DELAY)
+                ems_led2.write(1)
+                ems_led1.write(0)
+                sleep(DELAY)
+                ems_led2.write(0)
+            for i in range(5):
+                    play_sound(5000)
+            
+        sleep(DELAY)    
+
+#to run the code
+main()
